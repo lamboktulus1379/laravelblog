@@ -1,0 +1,143 @@
+If your route has parameters, you may pass them as the second argument to the route method:
+
+return redirect()->route('profile', ['id' => 1]);
+
+Populating Parameters Via Eloquent Models
+If you are redirecting to a route with an "ID" paramters that is being populated from an Eloquent model, you may pass the model itself. The ID will be extracted automatically:
+
+// For a route with the follwing URI: profile/{id}
+
+return redirect()->route('profile', [$user]);
+
+If you would like to customize the value that is placed in the route parameter, you should override the getRouteKey method on your Eloquent model:
+
+/**
+* Get the value of the model's route key.
+* 
+* @return mixed
+*/
+public function getRouteKey()
+{
+  return $this->slug;
+}
+
+# Redirecting To Controller Actions
+
+You ay also generate redirects to controller actions. To do so, pass the controller and action name to the action method. Remember, you do not need to specity the full amespace to the controller since Laravel's RouteServiceProvider will automatically set the base controller namespace:
+
+return redirect()->action('HomeControler@index');
+
+If your controller route require parameters, you may pass them as the second argument to the action method:
+
+return redirect()->action(
+  'UserController@profile', ['id' => 1]
+);
+
+# Redirecting Wih Flashed Session Data
+
+Redirecting to a new URL and flashing data to the session are usually done at the same time. Typically, this is done after successfully performing an action when you flash a success message to the session. For convenience, you may create a RedirectResponse instance and flash data to the session in a ingle, fluent method chain:
+
+Route::post('user/profile', function() {
+  // Update the user's profile...
+
+  return redirect('dashboard')->with('status', 'Profile updated!');
+});
+
+After the user is redirected, you may display the flashed message from the session. For example, using Blade syntax:
+
+@if (session('status'))
+  <div class="alert alert-success">
+    {{ session('status') }}
+  </div>
+@endif
+
+# Other Response Types
+
+The response helper may be used to generate other types of response instances. When the response helper is called without arguments, an implementation of the Illuminate\Contracts\Routing\ResponseFactory contract is returned. This contract provides several helpful methods for generating responses.
+
+# View responses
+If you need control over the response's status and headers but also need to return a view as the response's content, you should use the view method:
+
+return response()->view('hello', $data, 200)
+->header('Content-Type', $type);
+
+Of course, if you do not need to pass a custmo HTTP status code or custom headers, you should use the global view helper function.
+
+# JSON Responses
+
+The jsonmethod will automatically set the Content-Type header to application/json, as well as convert the given array to JSON using the json_encode PHP function:
+
+return response()->json([
+  'name' => 'Abigail',
+  'state' => 'CA
+]);
+
+If you would like to create a JSONP response, you may use the json method combination with the withCallback methode:
+
+return response()
+->json(['name' => 'Abigail', 'state' => 'CA'])
+->withCallback($request->input('callback'));
+
+# File Downloads
+
+The download method may be used to generate a response that forces the user's to generate a response that forces the user's browser to download the file at the given path. The dowload method accepts a file name as the second argument to the method, which will determine the file name that is seen by the user downloading the file, Finally, you may pass an array f HTTP headers as the third argument to the method:
+
+return response()->download($pathToFile);
+
+return response()->download($pathToFile, $name, $header);
+
+return response()->dowload($pathToFile)->deleteFileAfterSend();
+
+
+Symphony HttpFoundation, which managers file downloads, requires the file being downloaded to have an ASCII file name.
+
+Streamed Downloads
+Sometimes you may wish to turn the string response of a given operation into a downloadable response without having to write the contents of the operation to disk. You may use the streamDownload method in this scenario. This method accepts a callback, file name, and an optional array of headers as its arguments:
+
+return response()->streamDownload(function() {
+  echo Github::api('repo')
+  ->contents()
+  ->readme('laravel', 'laravel')['contents'];
+}, 'laravel-readme.me');
+
+# File Responses
+
+The file method may be used to display a file, such as an image or PDF< directly in the users's browser instead of initiating a download. This method accepts the path to the file as its first argument and an array of headers as its second argument:
+
+return response()->file($pathToFile);
+
+return response()->file($pahtToFile, $headers);;
+
+# Response Macros
+
+If you woul like to define a custom response that you can re-use in a variety of your routes and controllers, you may use the macro method on the Response facade. For example, from a servie provider's boot method:
+
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\ServiceProvider;
+
+class ResponseMacroServiceProvider extends ServiceProvider
+{
+  /**
+  * Register the application's response macros.
+  *
+  * @return void
+  */
+  public function boot()
+  {
+    Response::macro('caps', function ($value) {
+      return Response::make(strtoupper($value));
+    });
+  }
+}
+
+The macro function accepts a name as its first argument, and a Closure as its second. The macro's Closure will be eecute when calling the macro name from a ResponseFactory implementation or the response helper:
+
+return response()->caps('foo');
+
+Become a Laravel Partner
+
+Laravel Partners are elite shops providing top-motch Laravel development and consulting. Each of our partners can help you craft a beautiful, well-architected project.
